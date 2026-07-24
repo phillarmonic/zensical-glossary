@@ -137,15 +137,17 @@ class GlossaryStore:
         seen: set[str] = set()
 
         for i, match in enumerate(headings):
-            # Only headings at or below the configured level are terms; this
-            # keeps the page's own H1 title out of the glossary.
-            if len(match.group(1)) < heading_level:
+            # Only headings at the configured level are terms. Shallower
+            # headings can organize the glossary, and deeper headings stay in
+            # the current term's definition.
+            level = len(match.group(1))
+            if level != heading_level:
                 continue
             term = _clean(match.group(2))
             if len(term) < min_length or term.lower() in seen:
                 continue
             start = match.end()
-            end = headings[i + 1].start() if i + 1 < len(headings) else len(text)
+            end = _definition_end(text, headings, i, heading_level)
             definition = _clean(text[start:end])
             if not definition:
                 continue
@@ -454,6 +456,16 @@ def _clean(text: str) -> str:
     for pattern, repl in _CLEAN_STEPS:
         text = pattern.sub(repl, text)
     return text.strip()
+
+
+def _definition_end(
+    text: str, headings: list[re.Match[str]], index: int, heading_level: int
+) -> int:
+    """Find where a term definition ends in the Markdown source."""
+    for heading in headings[index + 1 :]:
+        if len(heading.group(1)) <= heading_level:
+            return heading.start()
+    return len(text)
 
 
 def _same_page(page_path: str | None, glossary_file: str) -> bool:

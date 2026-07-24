@@ -20,7 +20,7 @@ CSS: str = """
 .glossary-tooltip {
   position: absolute;
   z-index: 9999;
-  max-width: 20rem;
+  max-width: min(24rem, calc(100vw - 1rem));
   padding: 0.5rem 0.75rem;
   border-radius: 0.2rem;
   font-size: 0.72rem;
@@ -36,12 +36,20 @@ CSS: str = """
 .glossary-tooltip[data-show] {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 .glossary-tooltip__more {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.66rem;
   opacity: 0.75;
+  color: inherit;
+  text-decoration: none;
+}
+.glossary-tooltip__more:hover,
+.glossary-tooltip__more:focus {
+  opacity: 1;
+  text-decoration: underline;
 }
 """
 
@@ -51,6 +59,8 @@ JS: str = """
   window.__zensicalGlossaryInit = true;
 
   var tip = null;
+  var hideTimer = null;
+  var activeEl = null;
 
   function labels() {
   return window.__zensicalGlossaryLabels || {};
@@ -61,6 +71,10 @@ JS: str = """
     tip = document.createElement("div");
     tip.className = "glossary-tooltip";
     tip.setAttribute("role", "tooltip");
+    tip.addEventListener("mouseenter", cancelHide);
+    tip.addEventListener("mouseleave", scheduleHide);
+    tip.addEventListener("focusin", cancelHide);
+    tip.addEventListener("focusout", scheduleHide);
     document.body.appendChild(tip);
     return tip;
   }
@@ -69,11 +83,15 @@ JS: str = """
     var def = el.getAttribute("data-glossary");
     if (!def) return;
     var t = ensureTip();
+    activeEl = el;
+    cancelHide();
     t.innerHTML = "";
     t.appendChild(document.createTextNode(def));
-    if (el.getAttribute("href")) {
-      var more = document.createElement("span");
+    var href = el.getAttribute("href");
+    if (href) {
+      var more = document.createElement("a");
       more.className = "glossary-tooltip__more";
+      more.href = href;
       more.textContent =
         labels().more || "Click to read the full definition \u2192";
       t.appendChild(more);
@@ -84,6 +102,18 @@ JS: str = """
 
   function hide() {
     if (tip) tip.removeAttribute("data-show");
+    activeEl = null;
+  }
+
+  function scheduleHide() {
+    cancelHide();
+    hideTimer = window.setTimeout(hide, 400);
+  }
+
+  function cancelHide() {
+    if (!hideTimer) return;
+    window.clearTimeout(hideTimer);
+    hideTimer = null;
   }
 
   function position(el, t) {
@@ -107,9 +137,10 @@ JS: str = """
     if (el.__glossaryBound) return;
     el.__glossaryBound = true;
     el.addEventListener("mouseenter", function () { show(el); });
-    el.addEventListener("mouseleave", hide);
+    el.addEventListener("mouseleave", scheduleHide);
     el.addEventListener("focus", function () { show(el); });
-    el.addEventListener("blur", hide);
+    el.addEventListener("blur", scheduleHide);
+    el.addEventListener("click", function () { activeEl = el; });
   }
 
   function scan() {
@@ -125,7 +156,11 @@ JS: str = """
   if (window.document$ && typeof window.document$.subscribe === "function") {
     window.document$.subscribe(scan);
   }
-  window.addEventListener("scroll", hide, true);
+  window.addEventListener("scroll", function () {
+    if (activeEl && tip && tip.hasAttribute("data-show")) {
+      position(activeEl, tip);
+    }
+  }, true);
 })();
 """
 

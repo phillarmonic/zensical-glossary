@@ -4,36 +4,61 @@ icon: material/book-open-variant
 
 # Glossary
 
-This page defines the terms used throughout the documentation. Each entry
-below can be referenced automatically: whenever a term appears on another
-page, it is underlined, shows this definition on hover, and links back here.
+This glossary powers the examples on this site. The `##` headings are sections;
+the `###` headings are terms because the demo config sets `heading_level = 3`.
 
-## Zensical
+## Zensical basics
+
+### Zensical
 
 Zensical is a modern static site generator with a Rust core and a Python
-Markdown pipeline. It is the successor toolchain to Material for MkDocs.
+Markdown pipeline.
 
-## Markdown
+### Markdown
 
 Markdown is a lightweight plain-text formatting syntax that is converted to
 HTML. Zensical extends it through Python-Markdown extensions.
 
-## Extension
+### Front matter
 
-An extension is a Python-Markdown plugin that hooks into the rendering
-pipeline to transform content, for example to add tooltips or wrap images.
+Front matter is optional metadata at the top of a Markdown file, usually
+delimited by triple dashes, that sets page-level options.
 
-## Treeprocessor
+## Extension internals
 
-A treeprocessor is an extension component that walks and mutates the parsed
-HTML element tree before it is serialized to a string.
+### Extension
 
-## Admonition
+An extension is a Python-Markdown plugin that hooks into the rendering pipeline
+to transform content, add syntax, or inject supporting assets.
 
-An admonition is a callout block (note, warning, tip, and so on) used to
-draw attention to a piece of content.
+### Treeprocessor
 
-## Front matter
+A treeprocessor walks and mutates the parsed HTML element tree before the page
+is serialized to a string.
 
-Front matter is the optional YAML metadata block at the top of a Markdown
-file, delimited by triple dashes, used to set page options.
+### Postprocessor
+
+A postprocessor runs after Markdown serialization and can append or rewrite the
+final HTML string.
+
+## Reader experience
+
+### Glossary entry
+
+A glossary entry is a term and definition pair in the glossary source file.
+Each entry gets an anchor that other pages can link to.
+
+### Tooltip
+
+A tooltip is the compact definition shown when a reader hovers or focuses a
+glossary term.
+
+### Admonition
+
+An admonition is a callout block, such as a note, warning, or tip, used to draw
+attention to a piece of content.
+
+### Sectioned glossary
+
+A sectioned glossary uses shallower headings to organize related terms while a
+configured heading level identifies the terms themselves.

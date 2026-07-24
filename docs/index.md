@@ -1,178 +1,94 @@
 ---
-icon: lucide/rocket
+icon: lucide/book-open-check
 ---
 
-# Get started
+# zensical-glossary
 
-For full documentation visit [zensical.org](https://zensical.org/docs/).
+`zensical-glossary` turns a dedicated glossary page into inline definitions
+across a Zensical site. Hover terms like Zensical, Markdown, treeprocessor, or
+front matter to see a short definition without leaving the page.
 
-Zensical renders Markdown through a pipeline of extensions. For example, an
-extension may add an admonition, and a treeprocessor can rewrite the element
-tree. Page options are set via front matter. Hover any underlined term below
-to see its definition, or click it to jump to the glossary.
+Click a glossary term to jump to its full entry. The tooltip's read-more link is
+interactive too, so readers can move from a term to the definition even when the
+tooltip appears away from the source text.
 
-## Commands
+## What it adds
 
-* [`zensical new`][new] - Create a new project
-* [`zensical serve`][serve] - Start local web server
-* [`zensical build`][build] - Build your site
+- Automatic tooltip definitions for known terms.
+- Links from each term occurrence to its glossary entry.
+- Optional `first_only` behavior for quieter pages.
+- Sectioned glossaries where `##` headings organize terms and `###` headings
+  define terms.
+- Localized tooltip UI labels.
 
-  [new]: https://zensical.org/docs/usage/new/
-  [serve]: https://zensical.org/docs/usage/preview/
-  [build]: https://zensical.org/docs/usage/build/
+!!! note "Try the glossary in rich content"
 
-## Examples
+    A glossary term still works inside an admonition. This paragraph mentions
+    Markdown, Extension, and Admonition so the example shows how normal page
+    content is annotated after Python-Markdown renders it.
 
-### Admonitions
+??? info "It also works in collapsible details"
 
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/)
+    Details blocks are just rendered elements in the Markdown tree, so terms
+    like tooltip and glossary entry can be annotated here too.
 
-!!! note
+## Install
 
-    This is a **note** admonition. Use it to provide helpful information.
+Install the extension in your Zensical project:
 
-!!! warning
-
-    This is a **warning** admonition. Be careful!
-
-### Details
-
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/#collapsible-blocks)
-
-??? info "Click to expand for more info"
-
-    This content is hidden until you click to expand it.
-    Great for FAQs or long explanations.
-
-## Code Blocks
-
-> Go to [documentation](https://zensical.org/docs/authoring/code-blocks/)
-
-``` python hl_lines="2" title="Code blocks"
-def greet(name):
-    print(f"Hello, {name}!") # (1)!
-
-greet("Python")
+```bash
+uv add zensical-glossary
 ```
 
-1.  > Go to [documentation](https://zensical.org/docs/authoring/code-blocks/#code-annotations)
+Or use pip:
 
-    Code annotations allow to attach notes to lines of code.
-
-Code can also be highlighted inline: `#!python print("Hello, Python!")`.
-
-## Content tabs
-
-> Go to [documentation](https://zensical.org/docs/authoring/content-tabs/)
-
-=== "Python"
-
-    ``` python
-    print("Hello from Python!")
-    ```
-
-=== "Rust"
-
-    ``` rs
-    println!("Hello from Rust!");
-    ```
-
-## Diagrams
-
-> Go to [documentation](https://zensical.org/docs/authoring/diagrams/)
-
-``` mermaid
-graph LR
-  A[Start] --> B{Error?};
-  B -->|Yes| C[Hmm...];
-  C --> D[Debug];
-  D --> B;
-  B ---->|No| E[Yay!];
+```bash
+pip install zensical-glossary
 ```
 
-## Footnotes
+## Configure
 
-> Go to [documentation](https://zensical.org/docs/authoring/footnotes/)
+Enable the Markdown extension in `zensical.toml`:
 
-Here's a sentence with a footnote.[^1]
+```toml
+[project.markdown_extensions.zensical_glossary]
+glossary_file = "glossary.md"
+heading_level = 3
+first_only = true
+```
 
-Hover it, to see a tooltip.
+The demo site uses `heading_level = 3`, which lets `##` headings act as
+glossary sections while each `###` heading becomes a term.
 
-[^1]: This is the footnote.
+Because this example is published as a GitHub Pages project site, it also sets
+`base_url` to the published glossary URL so links work under the repository
+subpath.
 
+## Author terms
 
-## Formatting
+Create `docs/glossary.md`:
 
-> Go to [documentation](https://zensical.org/docs/authoring/formatting/)
+```markdown
+# Glossary
 
-- ==This was marked (highlight)==
-- ^^This was inserted (underline)^^
-- ~~This was deleted (strikethrough)~~
-- H~2~O
-- A^T^A
-- ++ctrl+alt+del++
+## Concepts
 
-## Icons, Emojis
+### Glossary entry
 
-> Go to [documentation](https://zensical.org/docs/authoring/icons-emojis/)
+A glossary entry is a heading and definition pair in the glossary source file.
 
-* :sparkles: `:sparkles:`
-* :rocket: `:rocket:`
-* :tada: `:tada:`
-* :memo: `:memo:`
-* :eyes: `:eyes:`
+### Tooltip
 
-## Maths
+A tooltip is the compact definition shown when a reader hovers a term.
+```
 
-> Go to [documentation](https://zensical.org/docs/authoring/math/)
+Then use those words naturally in your docs. The extension handles the links and
+tooltip text at build time.
 
-$$
-\cos x=\sum_{k=0}^{\infty}\frac{(-1)^k}{(2k)!}x^{2k}
-$$
+## Publish
 
-!!! warning "Needs configuration"
-    Note that MathJax is included via a `script` tag on this page and is not
-    configured in the generated default configuration to avoid including it
-    in a pages that do not need it. See the documentation for details on how
-    to configure it on all your pages if they are more Maths-heavy than these
-    simple starter pages.
+This repository includes a GitHub Pages workflow. On pushes to `main` or
+`master`, GitHub Actions installs the local package, builds the Zensical site,
+uploads `site/`, and deploys it to Pages.
 
-<script id="MathJax-script" src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [["\\(", "\\)"]],
-      displayMath: [["\\[", "\\]"]],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      ignoreHtmlClass: ".*|",
-      processHtmlClass: "arithmatex"
-    }
-  };
-
-  document$.subscribe(() => {
-    MathJax.startup.output.clearCache()
-    MathJax.typesetClear()
-    MathJax.texReset()
-    MathJax.typesetPromise()
-  })
-</script>
-
-## Task Lists
-
-> Go to [documentation](https://zensical.org/docs/authoring/lists/#using-task-lists)
-
-* [x] Install Zensical
-* [x] Configure `zensical.toml`
-* [x] Write amazing documentation
-* [ ] Deploy anywhere
-
-## Tooltips
-
-> Go to [documentation](https://zensical.org/docs/authoring/tooltips/)
-
-[Hover me][example]
-
-  [example]: https://example.com "I'm a tooltip!"
+In the repository settings, set Pages to use GitHub Actions as the source.
