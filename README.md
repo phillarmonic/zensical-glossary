@@ -1,7 +1,6 @@
 # zensical-glossary
 
-Add hover tooltips and glossary links to a Zensical site from one Markdown
-glossary page.
+Add hover tooltips and glossary links to a Zensical site from one Markdown glossary page.
 
 Write your terms once in `docs/glossary.md`. Everywhere else in your docs,
 matching words are automatically underlined, show a short definition on hover,
@@ -9,12 +8,17 @@ and link back to the full glossary entry.
 
 ## Why Use It
 
-- Keep terminology consistent across docs.
+- Keep terminology consistent and easily accessible across docs.
 - Give readers quick definitions without interrupting the page.
 - Link every term back to a canonical glossary entry.
-- Organize large glossaries into sections without turning section headings into
-  terms.
+- Organize large glossaries into sections without turning section headings into terms.
 - Use normal Python-Markdown and Zensical configuration.
+
+## Origin
+
+This extension has its origin in the necessity of generating richer documentation for the POG Programming Language (still to be released). As the language has too many domain specific terms, it is better to have them at hand instead of jumping back-and-forth between a glossary and the page the reader is currently at.
+
+We've decided to publish it before POG, since it has been proven extremely useful in our internal documentations.
 
 ## Install
 
@@ -66,8 +70,7 @@ first_only = true
 ```
 
 Now any page can simply mention Zensical or Markdown. The extension wraps those
-terms with a tooltip and a link to `/glossary/#zensical` or
-`/glossary/#markdown`.
+terms with a tooltip and a link to `/glossary/#zensical` or `/glossary/#markdown`.
 
 Run the site:
 
@@ -115,18 +118,18 @@ separate glossary entries.
 
 All options live under `[project.markdown_extensions.zensical_glossary]`.
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `glossary_file` | str | `"glossary.md"` | Glossary source, relative to `docs_dir`. |
-| `heading_level` | int | `2` | Exact heading level treated as terms; shallower headings can be sections. |
-| `first_only` | bool | `true` | Annotate only the first occurrence of each term per page. |
-| `case_sensitive` | bool | `false` | Match terms case-sensitively. |
-| `min_length` | int | `2` | Ignore terms shorter than this. |
-| `max_definition` | int | `280` | Truncate tooltip text to this many characters. |
-| `base_url` | str | derived | Override the glossary page URL used in links. |
-| `language` | str | site language | UI language for tooltip text: `en`, `fr`, `es`, `pt`. |
-| `labels` | table | `{}` | Override UI strings, e.g. `labels = { more = "Read more" }`. |
-| `docs_dir` | str | `"docs"` | Fallback docs directory if it cannot be read from Zensical config. |
+| Option           | Type  | Default         | Description                                                               |
+| ---------------- | ----- | --------------- | ------------------------------------------------------------------------- |
+| `glossary_file`  | str   | `"glossary.md"` | Glossary source, relative to `docs_dir`.                                  |
+| `heading_level`  | int   | `2`             | Exact heading level treated as terms; shallower headings can be sections. |
+| `first_only`     | bool  | `true`          | Annotate only the first occurrence of each term per page.                 |
+| `case_sensitive` | bool  | `false`         | Match terms case-sensitively.                                             |
+| `min_length`     | int   | `2`             | Ignore terms shorter than this.                                           |
+| `max_definition` | int   | `280`           | Truncate tooltip text to this many characters.                            |
+| `base_url`       | str   | derived         | Override the glossary page URL used in links.                             |
+| `language`       | str   | site language   | UI language for tooltip text: `en`, `fr`, `es`, `pt`.                     |
+| `labels`         | table | `{}`            | Override UI strings, e.g. `labels = { more = "Read more" }`.              |
+| `docs_dir`       | str   | `"docs"`        | Fallback docs directory if it cannot be read from Zensical config.        |
 
 For GitHub Pages project sites, set `base_url` when your site is served from a
 repository subpath:
@@ -147,18 +150,23 @@ uv run zensical build --clean
 ```
 
 The workflow at `.github/workflows/docs.yml` builds `site/` and deploys it to
-GitHub Pages on pushes to `main` or `master`.
+GitHub Pages on pushes to `master`.
 
 ## Local Development
 
-This repository uses drun for local automation. Use `xdrun --list` to see the
-available tasks.
+This repository uses the [drun automation language](https://github.com/phillarmonic/drun) for local automation. 
+
+Use `xdrun --list` to see the available tasks.
 
 ```bash
 xdrun test
 xdrun build
 xdrun rebuild
+# xdrun ci is optimized for LLMs and MCPs, it only generates
+# verbose output in the case an error is thrown. Saves input tokens.
 xdrun ci
+# For seeing everything the CI is outputting, use:
+xdrun ci --task-mode normal
 ```
 
 - `test` runs the Python test suite.

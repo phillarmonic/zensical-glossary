@@ -8,12 +8,8 @@ project "zensical-glossary" version "1.0":
 	requires tools:
 		uv
 
-task "default" means "Show available local workflows":
-	info "Local lifecycle tasks:"
-	info "  xdrun test     - run the Python test suite"
-	info "  xdrun build    - build package artifacts and the example site"
-	info "  xdrun rebuild  - clean generated outputs, then build again"
-	info "  xdrun ci       - run tests, rebuild, and validate package metadata"
+task "default" means "Welcome":
+    info "Welcome to the Zensical Glossary project! Use 'xdrun help' to see available tasks."
 
 task "test" mode "ci" means "Run the Python test suite":
 	run "uv run python -m unittest discover -s tests"
@@ -46,3 +42,4 @@ task "ci" mode "ci" means "Run the full local verification lifecycle":
 	call task "test"
 	call task "rebuild"
 	call task "package:check"
+    success "All local verification tasks completed successfully."
