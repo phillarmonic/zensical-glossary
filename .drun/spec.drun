@@ -20,6 +20,9 @@ task "site" mode "ci" means "Build the example Zensical site":
 task "site:rebuild" mode "ci" means "Clean and rebuild the example Zensical site":
 	run "uv run zensical build --clean"
 
+task "site:indexing" mode "ci" means "Verify robots.txt and sitemap.xml allow indexing":
+	run "uv run python -c \"from pathlib import Path; import xml.etree.ElementTree as ET; site=Path('site'); robots=(site/'robots.txt').read_text(encoding='utf-8'); assert 'User-agent: *' in robots, robots; assert 'Allow: /' in robots, robots; assert 'Disallow:' not in robots, robots; assert 'Sitemap: https://phillarmonic.github.io/zensical-glossary/sitemap.xml' in robots, robots; urls={el.text for el in ET.parse(site/'sitemap.xml').findall('.//{http://www.sitemaps.org/schemas/sitemap/0.9}loc')}; expected={'https://phillarmonic.github.io/zensical-glossary/', 'https://phillarmonic.github.io/zensical-glossary/usage/', 'https://phillarmonic.github.io/zensical-glossary/glossary/'}; assert urls == expected, urls\""
+
 task "package" mode "ci" means "Build source and wheel package artifacts":
 	run "uv run --with build python -m build"
 
@@ -32,11 +35,13 @@ task "clean" mode "ci" means "Remove generated local build artifacts":
 task "build" mode "ci" means "Build package artifacts and the example site":
 	call task "package"
 	call task "site"
+	call task "site:indexing"
 
 task "rebuild" mode "ci" means "Clean generated outputs, then build again":
 	call task "clean"
 	call task "package"
 	call task "site:rebuild"
+	call task "site:indexing"
 
 task "ci" mode "ci" means "Run the full local verification lifecycle":
 	call task "test"
