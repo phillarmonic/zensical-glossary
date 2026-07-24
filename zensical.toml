@@ -347,3 +347,18 @@ combine_header_slug = true
 [project.markdown_extensions.pymdownx.tasklist]
 custom_checkbox = true
 [project.markdown_extensions.pymdownx.tilde]
+
+# ----------------------------------------------------------------------------
+# zensical-glossary: hover tooltips + cross-links from a dedicated glossary
+# page (docs/glossary.md). Each heading on that page becomes a term; the text
+# below it becomes the definition. Occurrences elsewhere are linked and get a
+# hover tooltip.
+# ----------------------------------------------------------------------------
+[project.markdown_extensions.zensical_glossary]
+glossary_file = "glossary.md"
+first_only = true
+# The tooltip UI text is localized. By default it follows the site
+# "language" set above (en/fr/es/pt supported). Override explicitly with:
+# language = "fr"
+# Or customize individual strings (wins over the built-in translation):
+# labels = { more = "Cliquez pour lire la définition complète →" }

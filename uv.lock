@@ -262,7 +262,10 @@ wheels = [
 [[package]]
 name = "zensical-glossary"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
+dependencies = [
+    { name = "markdown" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -270,6 +273,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "markdown", specifier = ">=3.6" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "zensical", specifier = ">=0.0.51" }]

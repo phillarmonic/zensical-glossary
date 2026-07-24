@@ -6,6 +6,11 @@ icon: lucide/rocket
 
 For full documentation visit [zensical.org](https://zensical.org/docs/).
 
+Zensical renders Markdown through a pipeline of extensions. For example, an
+extension may add an admonition, and a treeprocessor can rewrite the element
+tree. Page options are set via front matter. Hover any underlined term below
+to see its definition, or click it to jump to the glossary.
+
 ## Commands
 
 * [`zensical new`][new] - Create a new project
