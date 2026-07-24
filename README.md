@@ -167,6 +167,9 @@ xdrun ci
 - `ci` runs the full local verification lifecycle, including package
   metadata checks.
 
+GitHub Actions runs the same `xdrun ci` pipeline in
+`.github/workflows/ci.yml` for pull requests and pushes.
+
 ## Internationalization
 
 The tooltip UI text is localized separately from your glossary content. The
