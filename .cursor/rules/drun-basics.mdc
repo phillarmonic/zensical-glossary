@@ -1,0 +1,18 @@
+---
+description: Work on repositories that use drun/xdrun automation.
+globs:
+  - "**/*.drun"
+  - "**/.drun/**"
+alwaysApply: false
+---
+
+When the repository uses drun or xdrun, read `.drun/ai/drun-basics.md` before changing automation files.
+
+Important reminders:
+- `xdrun` executes drun specs
+- prefer `xdrun --list` to inspect available tasks
+- task parameters use `key=value` syntax, not CLI flags
+- CLI behavior still uses `--flags`
+- prefer `@platform("linux")`, `@platform("mac")`, and `@platform("windows")` for platform-specific declarations
+- one unannotated task may coexist with platform-tagged variants as the fallback when no platform-specific variant matches
+- declare hard dependencies with `requires tools:`
