@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [1.0.0] - 2026-08-12
+
+### Added
+
 - Hover tooltips with a short definition for every annotated term, linking back to its canonical glossary entry.
 - Single-page glossaries via `glossary_file` and multi-page glossaries via `glossary_files` (paths or glob patterns), merged into one term index at build time; the first definition of a term wins.
 - Inline term definitions on any page with the `<!-- zensical-glossary: Term -->` comment marker, merged with glossary files into a hybrid index.
