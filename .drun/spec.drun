@@ -40,6 +40,22 @@ task "package" mode "ci" means "Build source and wheel package artifacts":
 task "package:check" mode "ci" means "Validate built package artifacts":
 	run "uv run --with twine twine check dist/*"
 
+task "publish:testpypi" means "Build, validate, and upload package artifacts to TestPyPI":
+	step "Building and validating package artifacts"
+	call task "package"
+	call task "package:check"
+	step "Uploading to TestPyPI (credentials from the [testpypi] section of ~/.pypirc)"
+	run "uv run --with twine twine upload -r testpypi dist/*" attached
+	success "Uploaded to TestPyPI. Check https://test.pypi.org/project/zensical-glossary/"
+
+task "publish" means "Build, validate, and upload package artifacts to PyPI":
+	step "Building and validating package artifacts"
+	call task "package"
+	call task "package:check"
+	step "Uploading to PyPI (credentials from the [pypi] section of ~/.pypirc)"
+	run "uv run --with twine twine upload -r pypi dist/*" attached
+	success "Uploaded to PyPI. Check https://pypi.org/project/zensical-glossary/"
+
 task "clean" mode "ci" means "Remove generated local build artifacts":
 	run "uv run python -c \"import shutil; from pathlib import Path; [shutil.rmtree(Path(p), ignore_errors=True) for p in ('dist', 'build', 'site')]\""
 
