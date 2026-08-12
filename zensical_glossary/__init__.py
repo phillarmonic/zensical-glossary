@@ -8,4 +8,4 @@ from __future__ import annotations
 from zensical_glossary.extension import GlossaryExtension, makeExtension
 
 __all__ = ["GlossaryExtension", "makeExtension"]
-__version__ = "1.1.0"
+__version__ = "1.2.0"
