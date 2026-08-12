@@ -192,10 +192,10 @@ term's definition block and every comma-separated alias also matches in
 prose, showing the canonical definition and linking to the canonical anchor:
 
 ```markdown
-### OLT
-<!-- zensical-glossary-aliases: Optical Line Terminal -->
+### API
+<!-- zensical-glossary-aliases: Application Programming Interface -->
 
-The equipment at the central office that serves many ONTs.
+A set of rules that lets one program request services from another.
 ```
 
 In inline mode, the marker goes right after the definition marker:
