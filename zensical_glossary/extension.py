@@ -60,6 +60,12 @@ _HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t]*#*\s*$", re.MULTILINE)
 # definition, and the page becomes the link target for that term.
 _INLINE_MARKER_RE = re.compile(r"<!--\s*zensical-glossary:\s*(.+?)\s*-->")
 
+# Alias marker: <!-- zensical-glossary-aliases: foo, bar --> inside a term's
+# definition block (in a glossary file, right after the term heading; in
+# inline mode, after the definition marker). Each comma-separated value is an
+# extra surface form that links back to the canonical term.
+_ALIAS_MARKER_RE = re.compile(r"<!--\s*zensical-glossary-aliases:\s*(.+?)\s*-->")
+
 # Lightweight Markdown -> plain text cleanup for tooltip text.
 _CLEAN_STEPS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"!\[[^\]]*\]\([^)]*\)"), ""),
@@ -79,7 +85,7 @@ _CLEAN_STEPS: tuple[tuple[re.Pattern[str], str], ...] = (
 class GlossaryEntry:
     """A single glossary term with its definition and anchor slug."""
 
-    __slots__ = ("definition", "origin", "page", "slug", "term")
+    __slots__ = ("aliases", "definition", "origin", "page", "slug", "term")
 
     def __init__(
         self,
@@ -88,6 +94,7 @@ class GlossaryEntry:
         slug: str,
         page: str = "",
         origin: str = "file",
+        aliases: tuple[str, ...] = (),
     ) -> None:
         self.term = term
         self.definition = definition
@@ -96,6 +103,12 @@ class GlossaryEntry:
         self.page = page
         # "file" (glossary source page) or "inline" (comment marker).
         self.origin = origin
+        # Extra surface forms that match in prose and link back to this term.
+        self.aliases = aliases
+
+    def surfaces(self) -> list[str]:
+        """Every matchable surface form: the term itself plus its aliases."""
+        return [self.term, *self.aliases]
 
 
 class GlossaryStore:
@@ -108,10 +121,21 @@ class GlossaryStore:
 
     def __init__(self, entries: list[GlossaryEntry]) -> None:
         self.entries = entries
-        # Map lowercase term -> entry for lookups, longest terms first so a
-        # multi-word term wins over a shorter substring term.
+        # Flat (surface, entry) match units: the term plus each alias. Sorted
+        # longest first so the alternation prefers the most specific surface
+        # (e.g. a multi-word alias wins over a shorter term substring).
+        self._units: list[tuple[str, GlossaryEntry]] = sorted(
+            (
+                (surface, entry)
+                for entry in entries
+                for surface in entry.surfaces()
+            ),
+            key=lambda unit: len(unit[0]),
+            reverse=True,
+        )
+        # Map lowercase surface -> entry for lookups.
         self._by_lower: dict[str, GlossaryEntry] = {
-            e.term.lower(): e for e in entries
+            surface.lower(): entry for surface, entry in self._units
         }
         self._patterns: dict[bool, re.Pattern[str] | None] = {}
 
@@ -193,10 +217,27 @@ class GlossaryStore:
                     if entry.term.lower() in seen:
                         continue
                     seen.add(entry.term.lower())
+                    # Aliases follow the same first-wins rule: an alias that
+                    # collides with an already-seen term or alias is dropped.
+                    # Copy instead of mutating, because entries are shared
+                    # with the per-file parse cache.
+                    aliases = tuple(
+                        alias
+                        for alias in entry.aliases
+                        if alias.lower() not in seen
+                        and not seen.add(alias.lower())
+                    )
+                    if aliases != entry.aliases:
+                        entry = GlossaryEntry(
+                            entry.term,
+                            entry.definition,
+                            entry.slug,
+                            page=entry.page,
+                            origin=entry.origin,
+                            aliases=aliases,
+                        )
                     entries.append(entry)
 
-        # Longest first so the alternation prefers the most specific term.
-        entries.sort(key=lambda e: len(e.term), reverse=True)
         store = cls(entries)
         cls._cache[key] = store
         return store
@@ -288,14 +329,19 @@ class GlossaryStore:
                 continue
             start = match.end()
             end = _definition_end(text, headings, i, heading_level)
-            definition = _clean(text[start:end])
+            block = text[start:end]
+            aliases = _extract_aliases(block, min_length=min_length)
+            # The alias marker is metadata, not part of the definition.
+            definition = _clean(_ALIAS_MARKER_RE.sub("", block, count=1))
             if not definition:
                 continue
             if len(definition) > max_definition:
                 definition = definition[: max_definition - 1].rstrip() + "\u2026"
             seen.add(term.lower())
             entries.append(
-                GlossaryEntry(term, definition, slugify(term, "-"), page)
+                GlossaryEntry(
+                    term, definition, slugify(term, "-"), page, aliases=aliases
+                )
             )
 
         # Longest first so the alternation prefers the most specific term.
@@ -334,7 +380,10 @@ class GlossaryStore:
                     break
             if i + 1 < len(markers):
                 end = min(end, markers[i + 1].start())
-            definition = _clean(text[marker.end() : end])
+            block = text[marker.end() : end]
+            aliases = _extract_aliases(block, min_length=min_length)
+            # The alias marker is metadata, not part of the definition.
+            definition = _clean(_ALIAS_MARKER_RE.sub("", block, count=1))
             if not definition:
                 continue
             if len(definition) > max_definition:
@@ -342,7 +391,12 @@ class GlossaryStore:
             seen.add(term.lower())
             entries.append(
                 GlossaryEntry(
-                    term, definition, slugify(term, "-"), page, "inline"
+                    term,
+                    definition,
+                    slugify(term, "-"),
+                    page,
+                    "inline",
+                    aliases,
                 )
             )
         return entries
@@ -353,8 +407,8 @@ class GlossaryStore:
         if case_sensitive in self._patterns:
             return self._patterns[case_sensitive]
         pattern: re.Pattern[str] | None = None
-        if self.entries:
-            alternation = "|".join(re.escape(e.term) for e in self.entries)
+        if self._units:
+            alternation = "|".join(re.escape(surface) for surface, _ in self._units)
             flags = 0 if case_sensitive else re.IGNORECASE
             pattern = re.compile(
                 rf"(?<![\w-])(?:{alternation})(?![\w-])", flags
@@ -364,8 +418,8 @@ class GlossaryStore:
 
     def lookup(self, text: str, *, case_sensitive: bool) -> GlossaryEntry | None:
         if case_sensitive:
-            for entry in self.entries:
-                if entry.term == text:
+            for surface, entry in self._units:
+                if surface == text:
                     return entry
             return None
         return self._by_lower.get(text.lower())
@@ -702,6 +756,27 @@ def _clean(text: str) -> str:
     for pattern, repl in _CLEAN_STEPS:
         text = pattern.sub(repl, text)
     return text.strip()
+
+
+def _extract_aliases(block: str, *, min_length: int) -> tuple[str, ...]:
+    """Pull the alias list out of a term's definition block.
+
+    Only the first alias marker counts. Aliases are cleaned like terms,
+    filtered by ``min_length``, deduplicated, and an alias equal to the term
+    itself is dropped by the caller's ``seen`` set.
+    """
+    marker = _ALIAS_MARKER_RE.search(block)
+    if marker is None:
+        return ()
+    seen: set[str] = set()
+    aliases: list[str] = []
+    for raw in marker.group(1).split(","):
+        alias = _clean(raw)
+        if len(alias) < min_length or alias.lower() in seen:
+            continue
+        seen.add(alias.lower())
+        aliases.append(alias)
+    return tuple(aliases)
 
 
 def _definition_end(

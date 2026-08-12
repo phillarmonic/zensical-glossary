@@ -20,6 +20,7 @@ show a short definition on hover, and link back to the full definition.
 - Organize large glossaries into sections without turning section headings into terms.
 - Spread terms across several glossary pages, organized by domain, and have them merged at build time.
 - Define terms inline on any page with a comment marker — no glossary file maintenance.
+- Add aliases to a term, so plural forms and alternative wordings also match and link back.
 - Use normal Python-Markdown and Zensical configuration.
 
 ## Origin
@@ -182,6 +183,40 @@ All pages are scanned once per build (cached by modification time) and merged
 with any glossary files into a single index — a hybrid glossary. When a term
 is defined both inline and in a glossary file, the glossary file wins. A page
 never links to the terms it defines itself.
+
+## Aliases
+
+Prose rarely uses the exact glossary wording — plural forms, alternative
+spellings, or a fuller name for an acronym. Add an alias marker inside a
+term's definition block and every comma-separated alias also matches in
+prose, showing the canonical definition and linking to the canonical anchor:
+
+```markdown
+### OLT
+<!-- zensical-glossary-aliases: Optical Line Terminal -->
+
+The equipment at the central office that serves many ONTs.
+```
+
+In inline mode, the marker goes right after the definition marker:
+
+```markdown
+<!-- zensical-glossary: Widget -->
+<!-- zensical-glossary-aliases: gadget, widgets -->
+
+A widget is a reusable unit that...
+```
+
+The marker renders as an invisible HTML comment and never appears in the
+tooltip. Aliases follow the same matching rules as terms:
+
+- Case-insensitive by default (`case_sensitive` applies to both).
+- The longest surface wins: a multi-word alias matches as one unit instead of
+  a shorter term inside it.
+- `first_only` counts the term and its aliases as one entry per page.
+- `min_length` filters out aliases that are too short.
+- On collision, the first definition wins: a real term always beats an alias,
+  and among aliases the earliest one wins.
 
 ## Configuration
 

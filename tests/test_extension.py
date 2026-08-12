@@ -557,5 +557,216 @@ class GlossaryInlineSuppressionTests(unittest.TestCase):
         self.assertNotIn("glossary-term", html)
 
 
+class GlossaryAliasParseTests(unittest.TestCase):
+    def test_parse_extracts_aliases_and_strips_marker(self) -> None:
+        entries = GlossaryStore._parse(
+            """
+# Glossary
+
+## Concepts
+
+### Passivo
+<!-- zensical-glossary-aliases: passivos, elemento passivo -->
+
+Um elemento passivo nao consome energia.
+""",
+            min_length=2,
+            max_definition=280,
+            heading_level=3,
+        )
+
+        self.assertEqual(["Passivo"], [e.term for e in entries])
+        entry = entries[0]
+        self.assertEqual(("passivos", "elemento passivo"), entry.aliases)
+        self.assertNotIn("zensical-glossary-aliases", entry.definition)
+        self.assertIn("nao consome energia", entry.definition)
+
+    def test_parse_inline_extracts_aliases(self) -> None:
+        entries = GlossaryStore._parse_inline(
+            """
+<!-- zensical-glossary: Widget -->
+<!-- zensical-glossary-aliases: gadget, widgets -->
+
+A widget is a reusable unit.
+""",
+            page="guide.md",
+            min_length=2,
+            max_definition=280,
+        )
+
+        self.assertEqual(("gadget", "widgets"), entries[0].aliases)
+        self.assertEqual("A widget is a reusable unit.", entries[0].definition)
+
+    def test_min_length_and_duplicates_filter_aliases(self) -> None:
+        entries = GlossaryStore._parse(
+            """
+## Widget
+<!-- zensical-glossary-aliases: x, gadget, Gadget, widgets -->
+
+A widget.
+""",
+            min_length=2,
+            max_definition=280,
+            heading_level=2,
+        )
+
+        self.assertEqual(("gadget", "widgets"), entries[0].aliases)
+
+
+class GlossaryAliasStoreTests(unittest.TestCase):
+    def setUp(self) -> None:
+        GlossaryStore.clear_cache()
+
+    @staticmethod
+    def _store(*files: tuple[str, str]) -> GlossaryStore:
+        with TemporaryDirectory() as tmp:
+            from pathlib import Path
+
+            docs_dir = Path(tmp)
+            resolved = []
+            for rel, text in files:
+                path = docs_dir / rel
+                path.write_text(text, encoding="utf-8")
+                resolved.append((path, rel))
+            return GlossaryStore.load_multi(
+                resolved, min_length=2, max_definition=280, heading_level=2
+            )
+
+    def test_alias_colliding_with_a_term_is_dropped(self) -> None:
+        store = self._store(
+            ("a.md", "# A\n\n## Shared\n\nA term.\n"),
+            (
+                "b.md",
+                (
+                    "# B\n\n## Beta\n"
+                    "<!-- zensical-glossary-aliases: Shared, gadget -->\n\n"
+                    "B term.\n"
+                ),
+            ),
+        )
+
+        by_term = {entry.term: entry for entry in store.entries}
+        self.assertEqual(("gadget",), by_term["Beta"].aliases)
+        self.assertEqual("Shared", store.lookup("shared", case_sensitive=False).term)
+
+    def test_duplicate_alias_first_entry_wins(self) -> None:
+        store = self._store(
+            (
+                "a.md",
+                (
+                    "# A\n\n## Alpha\n"
+                    "<!-- zensical-glossary-aliases: gadget -->\n\n"
+                    "A term.\n"
+                ),
+            ),
+            (
+                "b.md",
+                (
+                    "# B\n\n## Beta\n"
+                    "<!-- zensical-glossary-aliases: gadget -->\n\n"
+                    "B term.\n"
+                ),
+            ),
+        )
+
+        by_term = {entry.term: entry for entry in store.entries}
+        self.assertEqual(("gadget",), by_term["Alpha"].aliases)
+        self.assertEqual((), by_term["Beta"].aliases)
+        self.assertEqual("Alpha", store.lookup("gadget", case_sensitive=False).term)
+
+
+class GlossaryAliasRenderingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        GlossaryStore.clear_cache()
+
+    def render(self, text: str, glossary: str, **overrides) -> str:
+        with TemporaryDirectory() as tmp:
+            from pathlib import Path
+
+            docs_dir = Path(tmp)
+            (docs_dir / "glossary.md").write_text(glossary, encoding="utf-8")
+            config = {
+                "docs_dir": str(docs_dir),
+                "glossary_file": "glossary.md",
+                "base_url": "/glossary/",
+            }
+            config.update(overrides)
+            md = Markdown(extensions=[GlossaryExtension(**config)])
+            return md.convert(text)
+
+    GLOSSARY = (
+        "# Glossary\n\n"
+        "## Passivo\n"
+        "<!-- zensical-glossary-aliases: passivos, elemento passivo -->\n\n"
+        "Um elemento passivo nao consome energia.\n"
+    )
+
+    def test_alias_links_to_the_canonical_anchor(self) -> None:
+        html = self.render("Os passivos estao no inventario.", self.GLOSSARY)
+
+        self.assertIn('href="/glossary/#passivo"', html)
+        self.assertIn(">passivos</a>", html)
+        self.assertIn('data-glossary="Um elemento passivo', html)
+
+    def test_longest_surface_wins(self) -> None:
+        html = self.render("Um elemento passivo existe.", self.GLOSSARY)
+
+        self.assertIn(">elemento passivo</a>", html)
+        self.assertEqual(1, html.count('class="glossary-term"'))
+
+    def test_first_only_counts_term_and_alias_as_one_entry(self) -> None:
+        html = self.render(
+            "Passivo registado. Mais passivos aqui.",
+            self.GLOSSARY,
+            first_only=True,
+        )
+
+        self.assertEqual(1, html.count('class="glossary-term"'))
+
+    def test_alias_matching_is_case_insensitive_by_default(self) -> None:
+        html = self.render("Os PASSIVOS estao aqui.", self.GLOSSARY)
+
+        self.assertIn(">PASSIVOS</a>", html)
+
+    def test_case_sensitive_aliases(self) -> None:
+        glossary = self.GLOSSARY
+
+        exact = self.render(
+            "Os passivos estao aqui.", glossary, case_sensitive=True
+        )
+        self.assertIn(">passivos</a>", exact)
+
+        different_case = self.render(
+            "Os PASSIVOS estao aqui.", glossary, case_sensitive=True
+        )
+        self.assertNotIn("glossary-term", different_case)
+
+    def test_inline_definition_with_aliases(self) -> None:
+        with TemporaryDirectory() as tmp:
+            from pathlib import Path
+
+            docs_dir = Path(tmp)
+            (docs_dir / "guide.md").write_text(
+                "# Guide\n\n"
+                "<!-- zensical-glossary: Widget -->\n"
+                "<!-- zensical-glossary-aliases: gadget -->\n\n"
+                "A widget is a reusable unit.\n",
+                encoding="utf-8",
+            )
+            md = Markdown(
+                extensions=[
+                    GlossaryExtension(
+                        docs_dir=str(docs_dir),
+                        glossary_file="missing.md",
+                        inline_definitions=True,
+                    )
+                ]
+            )
+            html = md.convert("A gadget appears here.")
+
+        self.assertIn('href="/guide/#widget"', html)
+        self.assertIn(">gadget</a>", html)
+
+
 if __name__ == "__main__":
     unittest.main()

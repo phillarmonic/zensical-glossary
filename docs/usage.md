@@ -100,6 +100,35 @@ the marker above, and mentions of it on other pages link back here.
 A page never links to the terms it defines itself, and unchanged pages are
 never re-scanned, so watch-mode rebuilds stay fast.
 
+## Add aliases to a term
+
+Prose rarely uses the exact glossary wording. Add an alias marker inside a
+term's definition block — right after the heading in a glossary file, or
+after the definition marker in inline mode — and every comma-separated alias
+also matches in prose, showing the canonical definition and linking to the
+canonical anchor:
+
+```markdown
+### Passivo
+<!-- zensical-glossary-aliases: passivos, elemento passivo -->
+
+Um elemento passivo é um componente de rede que...
+```
+
+```markdown
+<!-- zensical-glossary: Widget -->
+<!-- zensical-glossary-aliases: gadget, widgets -->
+
+A widget is a reusable unit that...
+```
+
+The marker renders as an invisible HTML comment and never appears in the
+tooltip. Matching follows the same rules as terms: case-insensitive by
+default, longest surface first (a multi-word alias beats a shorter term), and
+`first_only` counts the term and its aliases as one entry. If an alias
+collides with another term or alias, the definition that comes first wins —
+a real term always beats an alias.
+
 ## Decide how often to link
 
 Use `first_only = true` when you want each term annotated once per page:

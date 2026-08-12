@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Term aliases via the `<!-- zensical-glossary-aliases: ... -->` comment marker, in glossary files and inline definitions alike: each comma-separated alias matches in prose and links back to the canonical term, with first-wins collision handling (a real term always beats an alias) and longest-surface-first matching.
+
 ## [1.0.0] - 2026-08-12
 
 ### Added
