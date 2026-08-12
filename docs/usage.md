@@ -109,10 +109,10 @@ also matches in prose, showing the canonical definition and linking to the
 canonical anchor:
 
 ```markdown
-### Passivo
-<!-- zensical-glossary-aliases: passivos, elemento passivo -->
+### Component
+<!-- zensical-glossary-aliases: components, reusable component -->
 
-Um elemento passivo é um componente de rede que...
+A component is a reusable building block that...
 ```
 
 ```markdown

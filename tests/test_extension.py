@@ -565,21 +565,21 @@ class GlossaryAliasParseTests(unittest.TestCase):
 
 ## Concepts
 
-### Passivo
-<!-- zensical-glossary-aliases: passivos, elemento passivo -->
+### Component
+<!-- zensical-glossary-aliases: components, reusable component -->
 
-Um elemento passivo nao consome energia.
+A component is a reusable building block.
 """,
             min_length=2,
             max_definition=280,
             heading_level=3,
         )
 
-        self.assertEqual(["Passivo"], [e.term for e in entries])
+        self.assertEqual(["Component"], [e.term for e in entries])
         entry = entries[0]
-        self.assertEqual(("passivos", "elemento passivo"), entry.aliases)
+        self.assertEqual(("components", "reusable component"), entry.aliases)
         self.assertNotIn("zensical-glossary-aliases", entry.definition)
-        self.assertIn("nao consome energia", entry.definition)
+        self.assertIn("reusable building block", entry.definition)
 
     def test_parse_inline_extracts_aliases(self) -> None:
         entries = GlossaryStore._parse_inline(
@@ -696,27 +696,27 @@ class GlossaryAliasRenderingTests(unittest.TestCase):
 
     GLOSSARY = (
         "# Glossary\n\n"
-        "## Passivo\n"
-        "<!-- zensical-glossary-aliases: passivos, elemento passivo -->\n\n"
-        "Um elemento passivo nao consome energia.\n"
+        "## Component\n"
+        "<!-- zensical-glossary-aliases: components, reusable component -->\n\n"
+        "A component is a reusable building block.\n"
     )
 
     def test_alias_links_to_the_canonical_anchor(self) -> None:
-        html = self.render("Os passivos estao no inventario.", self.GLOSSARY)
+        html = self.render("The components are in the inventory.", self.GLOSSARY)
 
-        self.assertIn('href="/glossary/#passivo"', html)
-        self.assertIn(">passivos</a>", html)
-        self.assertIn('data-glossary="Um elemento passivo', html)
+        self.assertIn('href="/glossary/#component"', html)
+        self.assertIn(">components</a>", html)
+        self.assertIn('data-glossary="A component', html)
 
     def test_longest_surface_wins(self) -> None:
-        html = self.render("Um elemento passivo existe.", self.GLOSSARY)
+        html = self.render("A reusable component exists.", self.GLOSSARY)
 
-        self.assertIn(">elemento passivo</a>", html)
+        self.assertIn(">reusable component</a>", html)
         self.assertEqual(1, html.count('class="glossary-term"'))
 
     def test_first_only_counts_term_and_alias_as_one_entry(self) -> None:
         html = self.render(
-            "Passivo registado. Mais passivos aqui.",
+            "Component registered. More components here.",
             self.GLOSSARY,
             first_only=True,
         )
@@ -724,20 +724,20 @@ class GlossaryAliasRenderingTests(unittest.TestCase):
         self.assertEqual(1, html.count('class="glossary-term"'))
 
     def test_alias_matching_is_case_insensitive_by_default(self) -> None:
-        html = self.render("Os PASSIVOS estao aqui.", self.GLOSSARY)
+        html = self.render("The COMPONENTS are here.", self.GLOSSARY)
 
-        self.assertIn(">PASSIVOS</a>", html)
+        self.assertIn(">COMPONENTS</a>", html)
 
     def test_case_sensitive_aliases(self) -> None:
         glossary = self.GLOSSARY
 
         exact = self.render(
-            "Os passivos estao aqui.", glossary, case_sensitive=True
+            "The components are here.", glossary, case_sensitive=True
         )
-        self.assertIn(">passivos</a>", exact)
+        self.assertIn(">components</a>", exact)
 
         different_case = self.render(
-            "Os PASSIVOS estao aqui.", glossary, case_sensitive=True
+            "The COMPONENTS are here.", glossary, case_sensitive=True
         )
         self.assertNotIn("glossary-term", different_case)
 
