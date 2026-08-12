@@ -1,5 +1,10 @@
 # zensical-glossary
 
+[![PyPI version](https://img.shields.io/pypi/v/zensical-glossary)](https://pypi.org/project/zensical-glossary/)
+[![Python versions](https://img.shields.io/pypi/pyversions/zensical-glossary)](https://pypi.org/project/zensical-glossary/)
+[![License](https://img.shields.io/pypi/l/zensical-glossary)](https://github.com/phillarmonic/zensical-glossary/blob/master/LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-phillarmonic.github.io-blue)](https://phillarmonic.github.io/zensical-glossary/)
+
 Add hover tooltips and glossary links to a Zensical site from one or more Markdown glossary pages.
 
 Write your terms once in `docs/glossary.md` — spread them across several
@@ -249,6 +254,21 @@ xdrun ci --task-mode normal
 
 GitHub Actions runs the same `xdrun ci` pipeline in
 `.github/workflows/ci.yml` for pull requests and pushes.
+
+### Releasing
+
+Releases are prepared with:
+
+```bash
+xdrun prepare-release version=X.Y.Z
+```
+
+This checks that the version is newer than the latest release, runs the full
+CI pipeline, promotes the unreleased changelog entries to the new version,
+syncs the version across the drun spec, `pyproject.toml`, and the package,
+and rebuilds the distribution artifacts. After reviewing the changes, commit,
+tag `vX.Y.Z`, and push the tag — the workflow at
+`.github/workflows/release.yml` builds and publishes to PyPI.
 
 ## Internationalization
 

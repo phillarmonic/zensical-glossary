@@ -8,6 +8,17 @@ project "zensical-glossary" version "1.0.0":
 	requires tools:
 		uv
 
+    scm: # Declare a specific SCM implementation for easier manipulation
+        git: # Technology
+            github: # Provider
+                zensical-glossary: # Repo alias (referenced by git commands below)
+                    default: https
+                    https: "https://github.com/phillarmonic/zensical-glossary.git"
+                    ssh: "git@github.com:phillarmonic/zensical-glossary.git"
+                    cli:
+                        repository: "phillarmonic/zensical-glossary"
+                        host: "github.com"
+
 task "default" means "Welcome":
     info "Welcome to the Zensical Glossary project! Use 'xdrun help' to see available tasks."
 
@@ -48,3 +59,21 @@ task "ci" mode "ci" means "Run the full local verification lifecycle":
 	call task "rebuild"
 	call task "package:check"
     success "All local verification tasks completed successfully."
+
+task "prepare-release" means "Runs checks related to going to a next release":
+    requires $version as string matching semver_optional_v
+    step "Preflight. Proposed version: v{$version}"
+    # Magic method for comparison (you can do this manually if you want to)
+    git ensure $version is newer than latest version from zensical-glossary
+    step "Preflight checks have passed. Will now run the CI."
+    call task ci
+    step "Promoting unreleased changelog entries to {$version}"
+    promote changelog "CHANGELOG.md" to version "{$version}"
+    update project version to "{$version}"
+    step "Syncing the version into pyproject.toml and the package __init__.py"
+    run "uv run python -c \"import re, pathlib; q = chr(34); p = pathlib.Path('pyproject.toml'); p.write_text(re.sub('(?m)^version = .*', 'version = ' + q + '{$version}' + q, p.read_text(), count=1)); i = pathlib.Path('zensical_glossary/__init__.py'); i.write_text(re.sub('(?m)^__version__ = .*', '__version__ = ' + q + '{$version}' + q, i.read_text(), count=1))\""
+    step "Rebuilding artifacts so dist/ matches the new version"
+    call task rebuild
+    call task "package:check"
+    success "According to the current spec, you should be good to go."
+    warning "But be mindful, with great power, comes great responsibility."
